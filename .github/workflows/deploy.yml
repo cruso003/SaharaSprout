@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Checkout code # Checks out the repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3 # Updated to v3 for Node 20 compatibility
 
       - name: Copy files to EC2 # Copies files to EC2
         uses: appleboy/scp-action@v0.1.0
