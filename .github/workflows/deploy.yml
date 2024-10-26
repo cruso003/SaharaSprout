@@ -1,9 +1,9 @@
-name: Deploy to EC2 # Workflow name
+name: Deploy to AWS EC2
 
-on: # Trigger events
+on:
   push:
     branches:
-      - main # Runs this workflow on pushes to the main branch
+      - main
 
 jobs:
   deploy:
@@ -13,22 +13,31 @@ jobs:
       - name: Checkout code # Checks out the repository
         uses: actions/checkout@v3 # Updated to v3 for Node 20 compatibility
 
-      - name: Copy files to EC2 # Copies files to EC2
-        uses: appleboy/scp-action@v0.1.0
-        with:
-          host: ${{ secrets.EC2_PUBLIC_IP }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: "."
-          target: "/home/ubuntu/SaharaSprout/saharasprout-backend"
+      - name: Debug Environment Variables # Optional debugging
+        run: |
+          echo "EC2_HOST: ${{ secrets.EC2_HOST }}"
+          echo "EC2_USER: ${{ secrets.EC2_USER }}"
+          echo "EC2_APP_DIR: ${{ secrets.EC2_APP_DIR }}"
+          echo "KEY length: ${#EC2_KEY}"
 
-      - name: SSH to EC2 and restart app # SSH to EC2 and restart the app
-        uses: appleboy/ssh-action@v0.1.7
-        with:
-          host: ${{ secrets.EC2_PUBLIC_IP }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            cd /home/ubuntu/SaharaSprout/saharasprout-backend
+      - name: Install SSH Key # Set up SSH key for secure access
+        run: |
+          echo "${{ secrets.EC2_SSH_KEY }}" > key.pem
+          chmod 600 key.pem
+
+      - name: Create .ssh directory and add EC2 host to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy application to EC2 # Copy files over to EC2
+        run: |
+          scp -i key.pem -o StrictHostKeyChecking=no -r ./* ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.EC2_APP_DIR }}
+
+      - name: SSH to EC2 and restart app # Restart app on EC2 server
+        run: |
+          ssh -i key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            cd ${{ secrets.EC2_APP_DIR }}
             npm install
             pm2 restart all || pm2 start index.js --name "saharasprout-backend"
+          EOF
