@@ -1,0 +1,34 @@
+name: Deploy to EC2 # Workflow name
+
+on: # Trigger events
+  push:
+    branches:
+      - main # Runs this workflow on pushes to the main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code # Checks out the repository
+        uses: actions/checkout@v2
+
+      - name: Copy files to EC2 # Copies files to EC2
+        uses: appleboy/scp-action@v0.0.6
+        with:
+          host: ${{ secrets.EC2_PUBLIC_IP }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "."
+          target: "/home/ubuntu/SaharaSprout/saharasprout-backend"
+
+      - name: SSH to EC2 and restart app # SSH to EC2 and restart the app
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_PUBLIC_IP }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/SaharaSprout/saharasprout-backend
+            npm install
+            pm2 restart all || pm2 start index.js --name "saharasprout-backend"
