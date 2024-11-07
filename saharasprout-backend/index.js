@@ -19,6 +19,7 @@ app.use("/", express.static("public"));
 const authRoutes = require('./routes/auth');
 const testRoute = require('./routes/test');
 const moistureRoute = require('./routes/moisture');
+const translateRoute = require('./routes/translation');
 
 // Sample Route
 app.get('/', (req, res) => {
@@ -29,6 +30,7 @@ app.get('/', (req, res) => {
 app.use('/auth', authRoutes);
 app.use('/api', testRoute);
 app.use('/api', moistureRoute);
+app.use('/api',translateRoute);
 
 // Start Server
 app.listen(PORT, () => {
