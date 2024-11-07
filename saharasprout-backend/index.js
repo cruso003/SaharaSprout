@@ -30,7 +30,7 @@ app.get('/', (req, res) => {
 app.use('/auth', authRoutes);
 app.use('/api', testRoute);
 app.use('/api', moistureRoute);
-app.use('/api',translateRoute);
+app.use('/api', translateRoute);
 
 // Start Server
 app.listen(PORT, () => {
