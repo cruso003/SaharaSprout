@@ -181,6 +181,8 @@ const ProfileCompletion = () => {
 
     try {
       const response = await auth.completeProfile(userId, formData)
+      console.log(response.data);
+      
 
       if (response.status === 200 || response.status === 201) {
         router.replace("/dashboard");

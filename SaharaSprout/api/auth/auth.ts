@@ -10,9 +10,8 @@ const sendPushTokenToServer = (userId: string, pushToken: string) =>
     notificationToken: pushToken,
   });
 
-const completeProfile = (userId: string, data: any) => client.post(`${endpoint}/${userId}/complete-profile`, {
-  data
-});
+  const completeProfile = (userId: string, data: any) => client.post(`${endpoint}/${userId}/complete-profile`, data);
+  
 export default {
   googleSignIn,
   sendPushTokenToServer,

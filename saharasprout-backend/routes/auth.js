@@ -68,42 +68,51 @@ router.post('/google', async (req, res) => {
 
 // Add route for completing profile
 router.post('/:userId/complete-profile', async (req, res) => {
-  const {userId} = req.params;
-  const {
-    // Personal Information
-    primaryPhone,
-    secondaryPhone,
-    preferredContactMethod,
-    
-    // Basic Farm Information
-    farm: {
-      name: farmName,
-      location: farmLocation,
-      country
-    },
-    
-    // Device Configuration
-    mainDevice: {
-      id: mainDeviceId,
-      name: mainDeviceName,
-      location: deviceLocation
-    },
-    subDevices: {
-      moistureSensor,
-      pump,
-      valve
-    },
-    
-    // Alert Settings
-    alerts: {
-      moistureThreshold,
-      systemStatusNotifications,
-      preferredAlertTimes,
-      emergencyContact
-    }
-  } = req.body;
+  const { userId } = req.params;
+  const formData = req.body.data || req.body; // Handle both cases
 
   try {
+    // Validate required fields
+    if (!formData.primaryPhone || !formData.farm?.name) {
+      return res.status(400).json({ 
+        error: 'Missing required fields' 
+      });
+    }
+
+    const {
+      // Personal Information
+      primaryPhone,
+      secondaryPhone,
+      preferredContactMethod,
+      
+      // Basic Farm Information
+      farm: {
+        name: farmName,
+        location: farmLocation,
+        country
+      },
+      
+      // Device Configuration
+      mainDevice: {
+        id: mainDeviceId,
+        name: mainDeviceName,
+        location: deviceLocation
+      },
+      subDevices: {
+        moistureSensor,
+        pump,
+        valve
+      },
+      
+      // Alert Settings
+      alerts: {
+        moistureThreshold,
+        systemStatusNotifications,
+        preferredAlertTimes,
+        emergencyContact
+      }
+    } = formData;
+
     const userRef = admin.firestore().collection('users').doc(userId);
     const farmRef = admin.firestore().collection('farms').doc();
     const mainDeviceRef = admin.firestore().collection('devices').doc(mainDeviceId);
@@ -119,9 +128,9 @@ router.post('/:userId/complete-profile', async (req, res) => {
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
-    // Create simplified farm document
+    // Create farm document
     batch.set(farmRef, {
-      userId: uid,
+      userId,  // Fixed: using userId from params instead of undefined uid
       name: farmName,
       location: farmLocation,
       country,
@@ -130,7 +139,7 @@ router.post('/:userId/complete-profile', async (req, res) => {
 
     // Create main device document
     batch.set(mainDeviceRef, {
-      userId: uid,
+      userId,  // Fixed: using userId from params
       farmId: farmRef.id,
       name: mainDeviceName,
       type: 'controller',
@@ -172,7 +181,10 @@ router.post('/:userId/complete-profile', async (req, res) => {
     });
   } catch (error) {
     console.error('Error completing profile:', error);
-    res.status(500).json({ error: 'Failed to complete profile' });
+    res.status(500).json({ 
+      error: 'Failed to complete profile',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
