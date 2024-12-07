@@ -202,6 +202,30 @@ router.post('/complete-profile', verifyToken, async (req, res) => {
   }
 });
 
+// save expo push token to user account
+router.post('/:userId/push-token', async (req, res) => {
+  const {userId} = req.params;
+  const {pushToken} = req.body;
+
+  if (!userId || !pushToken) {
+    return res
+      .status(400)
+      .json({message: "User ID and push token are required."});
+  }
+
+  try {
+    // Save the push token to Firestore
+    await db.collection("users").doc(userId).update({
+      pushToken,
+    });
+
+    return res.status(200).json({message: "Push token saved successfully."});
+  } catch (error) {
+    console.error("Error saving push token:", error);
+    return res.status(500).json({message: "Failed to save push token."});
+  }
+})
+
 // Protected route example
 router.get('/protected', verifyToken, (req, res) => {
   res.send(`Hello ${req.user.email}, welcome to the protected route!`);

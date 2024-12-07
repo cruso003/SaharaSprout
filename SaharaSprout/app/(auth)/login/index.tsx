@@ -37,12 +37,13 @@ export default function LoginScreen() {
       await AsyncStorage.setItem("userData", JSON.stringify(data));
       await AsyncStorage.setItem("isLoggedIn", JSON.stringify(true));
       await setUserData();
-      console.log(data);
       
-     /*  if (data.profileComplete != true) {
+     if (data.profileComplete === false) {
         router.push("/complete-profile");
+      } else {
+        router.push("/dashboard");
       }
-      router.push("/dashboard"); */
+      
     } catch (error: any) {
       console.error("Error occurred during Google Sign-In:", error);
   

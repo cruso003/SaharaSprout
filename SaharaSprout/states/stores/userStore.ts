@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User, UserStore } from '../types/userTypes';
+import { router } from 'expo-router';
 
 
 const useUserStore = create(
@@ -29,6 +30,7 @@ const useUserStore = create(
       clearUserData: async () => {
         await AsyncStorage.removeItem('userData');
         set({ user: null });
+        router.navigate('/(auth)/login')
       },
     }),
     {

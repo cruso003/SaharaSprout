@@ -29,9 +29,12 @@ jobs:
             rm -rf ${{ secrets.EC2_APP_DIR }}/*
           EOF
 
-      - name: Sync backend files to EC2 using rsync
-        run: |
-          rsync -avz --delete -e "ssh -i key.pem -o StrictHostKeyChecking=no" ./saharasprout-backend/ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.EC2_APP_DIR }}
+          - name: Sync backend files to EC2 using rsync
+          run: |
+            echo "node_modules/" > rsync-exclude.txt
+            echo ".env" >> rsync-exclude.txt
+            echo "your-other-files-or-directories-to-ignore/" >> rsync-exclude.txt
+            rsync -avz --delete --exclude-from=rsync-exclude.txt -e "ssh -i key.pem -o StrictHostKeyChecking=no" ./saharasprout-backend/ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.EC2_APP_DIR }}     
 
       - name: Debug EC2 files
         run: |

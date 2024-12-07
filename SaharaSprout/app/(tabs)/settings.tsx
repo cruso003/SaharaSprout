@@ -5,6 +5,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Ionicons } from '@expo/vector-icons';
+import useUserStore from '@/states/stores/userStore';
 
 // Define types for renderSettingItem props
 interface SettingItemProps {
@@ -17,6 +18,11 @@ interface SettingItemProps {
 const Settings = () => {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? 'light'];
+  const {clearUserData} = useUserStore();
+
+  const logOut = async () => {
+    await clearUserData();
+  }
 
   // Define the renderSettingItem function with typed parameters
   const renderSettingItem = ({ icon, title, hasSwitch = false, hasChevron = true }: SettingItemProps) => (
@@ -70,7 +76,7 @@ const Settings = () => {
           {renderSettingItem({ icon: 'language-outline', title: 'Language' })}
         </View>
 
-        <TouchableOpacity style={styles.logoutButton}>
+        <TouchableOpacity style={styles.logoutButton} onPress={logOut}>
           <ThemedText style={styles.logoutButtonText}>Log Out</ThemedText>
         </TouchableOpacity>
       </ScrollView>
