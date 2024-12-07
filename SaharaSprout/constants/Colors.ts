@@ -19,6 +19,7 @@ export const Colors = {
     text: black,
     textSecondary: '#555555',
     icon: darkGreen,
+    error: '#F44336',
   },
   dark: {
     primary: darkGreen,
@@ -29,5 +30,6 @@ export const Colors = {
     text: white,
     textSecondary: '#CCCCCC',
     icon: lightGreen,
+    error: '#F44336',
   },
 };

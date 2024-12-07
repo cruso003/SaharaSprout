@@ -83,16 +83,19 @@ router.post('/complete-profile', verifyToken, async (req, res) => {
       size: farmSize,
       sizeUnit,
       cropTypes,
-      soilType,
-      climateType
+      soilType
     },
     
     // Device Configuration
-    device: {
-      id: deviceId,
-      name: deviceName,
-      location: deviceLocation,
-      type: deviceType
+    mainDevice: {
+      id: mainDeviceId,
+      name: mainDeviceName,
+      location: deviceLocation
+    },
+    subDevices: {
+      moistureSensor,
+      pump,
+      valve
     },
     
     // Alert Preferences
@@ -108,9 +111,9 @@ router.post('/complete-profile', verifyToken, async (req, res) => {
   try {
     const userRef = admin.firestore().collection('users').doc(uid);
     const farmRef = admin.firestore().collection('farms').doc();
-    const deviceRef = admin.firestore().collection('devices').doc(deviceId);
+    const mainDeviceRef = admin.firestore().collection('devices').doc(mainDeviceId);
 
-    // Start a batch write to ensure all operations succeed or fail together
+    // Start a batch write
     const batch = admin.firestore().batch();
 
     // Update user profile
@@ -132,31 +135,66 @@ router.post('/complete-profile', verifyToken, async (req, res) => {
       sizeUnit,
       cropTypes,
       soilType,
-      climateType,
+      country: '',
       createdAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
-    // Create device document
-    batch.set(deviceRef, {
+    // Create main device document
+    batch.set(mainDeviceRef, {
       userId: uid,
       farmId: farmRef.id,
-      name: deviceName,
+      name: mainDeviceName,
+      type: 'controller',
       location: deviceLocation,
-      type: deviceType,
+      model: 'ESP8266',
       moistureThreshold,
       systemStatusNotifications,
       maintenanceAlerts,
       preferredAlertTimes,
       emergencyContact,
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      subDevices: {
+        moistureSensor: {
+          id: moistureSensor.id,
+          name: moistureSensor.name,
+          type: 'sensor',
+          status: 'active'
+        },
+        pump: {
+          id: pump.id,
+          name: pump.name,
+          type: 'pump',
+          status: 'active'
+        },
+        valve: {
+          id: valve.id,
+          name: valve.name,
+          type: 'valve',
+          status: 'active'
+        }
+      }
+    });
+
+    // Store device readings in a separate collection
+    const readingsRef = admin.firestore()
+      .collection('devices')
+      .doc(mainDeviceId)
+      .collection('readings');
+
+    // Create initial reading document
+    batch.set(readingsRef.doc(), {
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      type: 'setup',
+      status: 'initialized'
     });
 
     await batch.commit();
 
+    // Return success response with necessary IDs
     res.status(200).json({
       message: 'Profile completed successfully',
       farmId: farmRef.id,
-      deviceId
+      deviceId: mainDeviceId
     });
   } catch (error) {
     console.error('Error completing profile:', error);
