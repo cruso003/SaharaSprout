@@ -17,6 +17,7 @@ import { TextInput } from "@/components/TextInput";
 import { router } from "expo-router";
 import useUserStore from "@/states/stores/userStore";
 import { Picker } from "@react-native-picker/picker";
+import auth from "@/api/auth/auth";
 
 const generateDeviceId = (prefix: string) => {
   const random = Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -95,6 +96,8 @@ const ProfileCompletion = () => {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
+  const userId = user?.uid ?? ""
 
   const [formData, setFormData] = useState({
     primaryPhone: "",
@@ -177,20 +180,9 @@ const ProfileCompletion = () => {
     }
 
     try {
-      const response = await fetch(
-        "http://34.227.29.64/auth/complete-profile",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${user?.token}`,
-          },
-          body: JSON.stringify(formData),
-        }
-      );
+      const response = await auth.completeProfile(userId, formData)
 
-      const data = await response.json();
-      if (response.ok) {
+      if (response.status === 200 || response.status === 201) {
         router.replace("/dashboard");
       } else {
         Alert.alert(
