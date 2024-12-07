@@ -16,7 +16,7 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const { setUserData } = useUserStore();
-  //const { expoPushToken } = usePushNotifications();
+  const { expoPushToken } = usePushNotifications();
   const webClientId = process.env.EXPO_PUBLIC_WEB_CLIENT_ID!;
   
   const colorScheme = useColorScheme();
@@ -30,7 +30,7 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
- /*  const sendPushToken = async () => {
+  const sendPushToken = async () => {
     const userId = useUserStore.getState().userID;
 
     const pushToken = expoPushToken?.data;
@@ -42,9 +42,9 @@ export default function RootLayout() {
         console.error("Failed to send push token:", error);
       }
     }
-  }; */
+  }; 
 
-  /* useEffect(() => {
+  useEffect(() => {
     const initializeData = async () => {
       await setUserData();   
      sendPushToken();
@@ -57,7 +57,7 @@ export default function RootLayout() {
        offlineAccess: true
       });
 
-  }, [expoPushToken]); */
+  }, [expoPushToken]); 
 
   if (!loaded) {
     return null;

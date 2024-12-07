@@ -80,7 +80,7 @@ const ProfileCompletion = () => {
 
   const handleSubmit = async () => {
     try {
-      const response = await fetch("http://192.168.8.144:5000/auth/complete-profile", {
+      const response = await fetch("http://34.227.29.64/auth/complete-profile", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

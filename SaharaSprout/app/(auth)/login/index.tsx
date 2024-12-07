@@ -19,7 +19,7 @@ export default function LoginScreen() {
   const [error, setError] = useState("");
   const { setUserData } = useUserStore();
 
-  /* const handleGoogleSignIn = async () => {
+   const handleGoogleSignIn = async () => {
     try {
       await GoogleSignin.hasPlayServices();
   
@@ -31,16 +31,18 @@ export default function LoginScreen() {
       if (!idToken) {
         throw new Error("Failed to retrieve ID token.");
       }
-
       const response = await authApi.googleSignIn(idToken);
-  
+
       const data = response.data;
       await AsyncStorage.setItem("userData", JSON.stringify(data));
       await AsyncStorage.setItem("isLoggedIn", JSON.stringify(true));
       await setUserData();
-  
-      router.push("/dashboard");
-  
+      console.log(data);
+      
+     /*  if (data.profileComplete != true) {
+        router.push("/complete-profile");
+      }
+      router.push("/dashboard"); */
     } catch (error: any) {
       console.error("Error occurred during Google Sign-In:", error);
   
@@ -56,7 +58,7 @@ export default function LoginScreen() {
       setError(error.message);
     }
   };
-   */
+   
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -97,7 +99,7 @@ export default function LoginScreen() {
         >
           <TouchableOpacity
             style={[styles.button, styles.googleButton]}
-            //onPress={handleGoogleSignIn}
+            onPress={handleGoogleSignIn}
           >
             <Image
               source={require('../../../assets/images/googleLogo.png')}

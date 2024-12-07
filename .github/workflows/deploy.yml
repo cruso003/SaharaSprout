@@ -10,34 +10,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code # Checks out the repository
-        uses: actions/checkout@v3 # Updated to v3 for Node 20 compatibility
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: Debug Environment Variables # Optional debugging
-        run: |
-          echo "EC2_HOST: ${{ secrets.EC2_HOST }}"
-          echo "EC2_USER: ${{ secrets.EC2_USER }}"
-          echo "EC2_APP_DIR: ${{ secrets.EC2_APP_DIR }}"
-          echo "KEY length: ${#EC2_KEY}"
-
-      - name: Install SSH Key # Set up SSH key for secure access
+      - name: Install SSH Key
         run: |
           echo "${{ secrets.EC2_SSH_KEY }}" > key.pem
           chmod 600 key.pem
 
-      - name: Create .ssh directory and add EC2 host to known hosts
+      - name: Add EC2 host to known hosts
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deploy application to EC2 # Copy files over to EC2
+      - name: Clean up EC2 directory before copying files
         run: |
-          scp -i key.pem -o StrictHostKeyChecking=no -r ./* ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.EC2_APP_DIR }}
+          ssh -i key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            rm -rf ${{ secrets.EC2_APP_DIR }}/*
+          EOF
 
-      - name: SSH to EC2 and restart app # Restart app on EC2 server
+          - name: Sync backend files to EC2 using rsync
+          run: |
+            rsync -avz --delete -e "ssh -i key.pem -o StrictHostKeyChecking=no" ./saharasprout-backend/ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.EC2_APP_DIR }}        
+
+      - name: Debug EC2 files
+        run: |
+          ssh -i key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            ls -la ${{ secrets.EC2_APP_DIR }}
+          EOF
+
+      - name: Restart application
         run: |
           ssh -i key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             cd ${{ secrets.EC2_APP_DIR }}
             npm install
-            pm2 restart all || pm2 start index.js --name "saharasprout-backend"
+            pm2 reload index.js --name "saharasprout-backend" || pm2 start index.js --name "saharasprout-backend"
           EOF

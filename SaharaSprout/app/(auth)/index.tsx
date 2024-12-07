@@ -23,7 +23,7 @@ export default function AuthIndex() {
   if (isAuthenticated) {
     return <Redirect href="/dashboard" />;
   } else {
-    return <Redirect href="/dashboard" />;
+    return <Redirect href="/login" />;
   }
 
 }
