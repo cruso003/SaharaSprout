@@ -74,16 +74,12 @@ router.post('/complete-profile', verifyToken, async (req, res) => {
     primaryPhone,
     secondaryPhone,
     preferredContactMethod,
-    timeZone,
     
-    // Farm Information
+    // Basic Farm Information
     farm: {
       name: farmName,
-      address: farmAddress,
-      size: farmSize,
-      sizeUnit,
-      cropTypes,
-      soilType
+      location: farmLocation,
+      country
     },
     
     // Device Configuration
@@ -98,11 +94,10 @@ router.post('/complete-profile', verifyToken, async (req, res) => {
       valve
     },
     
-    // Alert Preferences
+    // Alert Settings
     alerts: {
       moistureThreshold,
       systemStatusNotifications,
-      maintenanceAlerts,
       preferredAlertTimes,
       emergencyContact
     }
@@ -113,7 +108,6 @@ router.post('/complete-profile', verifyToken, async (req, res) => {
     const farmRef = admin.firestore().collection('farms').doc();
     const mainDeviceRef = admin.firestore().collection('devices').doc(mainDeviceId);
 
-    // Start a batch write
     const batch = admin.firestore().batch();
 
     // Update user profile
@@ -121,21 +115,16 @@ router.post('/complete-profile', verifyToken, async (req, res) => {
       primaryPhone,
       secondaryPhone,
       preferredContactMethod,
-      timeZone,
       profileComplete: true,
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
-    // Create farm document
+    // Create simplified farm document
     batch.set(farmRef, {
       userId: uid,
       name: farmName,
-      address: farmAddress,
-      size: farmSize,
-      sizeUnit,
-      cropTypes,
-      soilType,
-      country: '',
+      location: farmLocation,
+      country,
       createdAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
@@ -149,7 +138,6 @@ router.post('/complete-profile', verifyToken, async (req, res) => {
       model: 'ESP8266',
       moistureThreshold,
       systemStatusNotifications,
-      maintenanceAlerts,
       preferredAlertTimes,
       emergencyContact,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -175,22 +163,8 @@ router.post('/complete-profile', verifyToken, async (req, res) => {
       }
     });
 
-    // Store device readings in a separate collection
-    const readingsRef = admin.firestore()
-      .collection('devices')
-      .doc(mainDeviceId)
-      .collection('readings');
-
-    // Create initial reading document
-    batch.set(readingsRef.doc(), {
-      timestamp: admin.firestore.FieldValue.serverTimestamp(),
-      type: 'setup',
-      status: 'initialized'
-    });
-
     await batch.commit();
 
-    // Return success response with necessary IDs
     res.status(200).json({
       message: 'Profile completed successfully',
       farmId: farmRef.id,
