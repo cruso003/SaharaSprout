@@ -67,8 +67,8 @@ router.post('/google', async (req, res) => {
 });
 
 // Add route for completing profile
-router.post('/complete-profile', verifyToken, async (req, res) => {
-  const uid = req.user.uid;
+router.post('/:userId/complete-profile', async (req, res) => {
+  const {userId} = req.params;
   const {
     // Personal Information
     primaryPhone,
@@ -104,7 +104,7 @@ router.post('/complete-profile', verifyToken, async (req, res) => {
   } = req.body;
 
   try {
-    const userRef = admin.firestore().collection('users').doc(uid);
+    const userRef = admin.firestore().collection('users').doc(userId);
     const farmRef = admin.firestore().collection('farms').doc();
     const mainDeviceRef = admin.firestore().collection('devices').doc(mainDeviceId);
 

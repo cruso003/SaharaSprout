@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -6,47 +6,113 @@ import {
   TouchableOpacity,
   Platform,
   StatusBar,
+  Alert,
 } from "react-native";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { Card } from "@/components/Card";
-import { Picker } from "@react-native-picker/picker";
+import { TextInput } from "@/components/TextInput";
 import { router } from "expo-router";
 import useUserStore from "@/states/stores/userStore";
-import { TextInput } from "@/components/TextInput";
+import { Picker } from "@react-native-picker/picker";
+
+const generateDeviceId = (prefix: string) => {
+  const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+  return `${prefix}-${random}`;
+};
+
+const validatePhoneNumber = (phone: string) => {
+    // Basic phone validation - can be adjusted based on your specific requirements
+    return phone.length >= 10;
+  };
+  
+  const validateMoistureThreshold = (threshold: string) => {
+    const value = parseInt(threshold);
+    return !isNaN(value) && value >= 0 && value <= 100;
+  };
+
+  interface FormErrors {
+    primaryPhone?: string;
+    emergencyContact?: string;
+    farm?: {
+      name?: string;
+      location?: string;
+      country?: string;
+    };
+    mainDevice?: {
+      name?: string;
+    };
+    alerts?: {
+      moistureThreshold?: string;
+    };
+  }
 
 const ProfileCompletion = () => {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? "light"];
   const { user } = useUserStore();
+  const [errors, setErrors] = useState<FormErrors>({});
+
+  const validateForm = () => {
+    const newErrors: FormErrors = {};
+
+    // Contact Information
+    if (!formData.primaryPhone) {
+      newErrors.primaryPhone = 'Primary phone number is required';
+    } else if (!validatePhoneNumber(formData.primaryPhone)) {
+      newErrors.primaryPhone = 'Please enter a valid phone number';
+    }
+
+    // Farm Information
+    if (!formData.farm.name) {
+      newErrors.farm = { ...newErrors.farm, name: 'Farm name is required' };
+    }
+    if (!formData.farm.location) {
+      newErrors.farm = { ...newErrors.farm, location: 'Farm location is required' };
+    }
+    if (!formData.farm.country) {
+      newErrors.farm = { ...newErrors.farm, country: 'Country is required' };
+    }
+
+    // Device Configuration
+    if (!formData.mainDevice.name) {
+      newErrors.mainDevice = { name: 'Controller name is required' };
+    }
+
+    // Alert Preferences
+    if (!validateMoistureThreshold(formData.alerts.moistureThreshold)) {
+      newErrors.alerts = { 
+        moistureThreshold: 'Please enter a valid threshold between 0 and 100' 
+      };
+    }
+
+    if (formData.alerts.emergencyContact && !validatePhoneNumber(formData.alerts.emergencyContact)) {
+      newErrors.emergencyContact = 'Please enter a valid emergency contact number';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const [formData, setFormData] = useState({
-    // Personal Information
     primaryPhone: "",
     secondaryPhone: "",
     preferredContactMethod: "both",
-    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
 
-    // Farm Information
     farm: {
       name: "",
-      address: "",
-      size: "",
-      sizeUnit: "hectares",
-      cropTypes: "",
-      soilType: "",
-      climateType: "",
+      location: "",
+      country: "",
     },
-    // Device Configuration
-    // Main Device (ESP8266)
+
     mainDevice: {
       id: "",
       name: "",
       location: "",
     },
-    // Sub-devices
+
     subDevices: {
       moistureSensor: {
         id: "",
@@ -68,34 +134,76 @@ const ProfileCompletion = () => {
       },
     },
 
-    // Alert Preferences
     alerts: {
       moistureThreshold: "30",
       systemStatusNotifications: true,
-      maintenanceAlerts: true,
       preferredAlertTimes: "anytime",
       emergencyContact: "",
     },
   });
 
-  const handleSubmit = async () => {
-    try {
-      const response = await fetch("http://34.227.29.64/auth/complete-profile", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${user?.token}`,
+  useEffect(() => {
+    setFormData((prev) => ({
+      ...prev,
+      mainDevice: {
+        ...prev.mainDevice,
+        id: generateDeviceId("CTR"),
+      },
+      subDevices: {
+        moistureSensor: {
+          ...prev.subDevices.moistureSensor,
+          id: generateDeviceId("SNS"),
         },
-        body: JSON.stringify(formData),
-      });
+        pump: {
+          ...prev.subDevices.pump,
+          id: generateDeviceId("PMP"),
+        },
+        valve: {
+          ...prev.subDevices.valve,
+          id: generateDeviceId("VLV"),
+        },
+      },
+    }));
+  }, []);
+
+  const handleSubmit = async () => {
+    if (!validateForm()) {
+      // Show error message to user
+      Alert.alert(
+        'Validation Error',
+        'Please check the form for errors and try again.'
+      );
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        "http://34.227.29.64/auth/complete-profile",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${user?.token}`,
+          },
+          body: JSON.stringify(formData),
+        }
+      );
 
       const data = await response.json();
       if (response.ok) {
-        // Handle successful profile completion
         router.replace("/dashboard");
+      } else {
+        Alert.alert(
+          'Error',
+          'Failed to complete profile. Please try again.'
+        );
       }
     } catch (error) {
       console.error("Error completing profile:", error);
+      Alert.alert(
+        'Error',
+        'An error occurred while saving your profile. Please check your connection and try again.'
+      );
     }
   };
 
@@ -108,14 +216,13 @@ const ProfileCompletion = () => {
         <View style={styles.header}>
           <ThemedText style={styles.title}>Complete Your Profile</ThemedText>
           <ThemedText style={styles.subtitle}>
-            Please provide some additional information to set up your irrigation
-            system
+            Set up your irrigation system control preferences
           </ThemedText>
         </View>
 
         <Card style={styles.section}>
           <ThemedText style={styles.sectionTitle}>
-            Personal Information
+            Contact Information
           </ThemedText>
           <TextInput
             label="Primary Phone Number"
@@ -128,6 +235,7 @@ const ProfileCompletion = () => {
             }
             keyboardType="phone-pad"
             placeholder="Enter your primary phone number"
+            error={errors.primaryPhone}
           />
           <TextInput
             label="Secondary Phone Number (Optional)"
@@ -141,10 +249,29 @@ const ProfileCompletion = () => {
             keyboardType="phone-pad"
             placeholder="Enter a backup phone number"
           />
+          <View style={styles.pickerContainer}>
+            <ThemedText style={styles.label}>
+              Preferred Contact Method
+            </ThemedText>
+            <Picker
+              selectedValue={formData.preferredContactMethod}
+              onValueChange={(value: string) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  preferredContactMethod: value,
+                }))
+              }
+              style={styles.pickerContainer}
+            >
+              <Picker.Item label="SMS" value="sms" />
+              <Picker.Item label="App Notifications" value="app" />
+              <Picker.Item label="Both" value="both" />
+            </Picker>
+          </View>
         </Card>
 
         <Card style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>Farm Information</ThemedText>
+          <ThemedText style={styles.sectionTitle}>Farm Location</ThemedText>
           <TextInput
             label="Farm Name"
             value={formData.farm.name}
@@ -154,71 +281,49 @@ const ProfileCompletion = () => {
                 farm: { ...prev.farm, name: text },
               }))
             }
-            placeholder="Enter your farm's name"
+            placeholder="Give your farm a name"
+            error={errors.farm?.name}
           />
           <TextInput
-            label="Farm Address"
-            value={formData.farm.address}
+            label="Farm Location"
+            value={formData.farm.location}
             onChangeText={(text: string) =>
               setFormData((prev) => ({
                 ...prev,
-                farm: { ...prev.farm, address: text },
+                farm: { ...prev.farm, location: text },
               }))
             }
-            placeholder="Enter farm's physical address"
+            placeholder="Enter farm's location/address"
+            error={errors.farm?.location}
           />
-          <View style={styles.row}>
-            <View style={styles.flex}>
-              <TextInput
-                label="Farm Size"
-                value={formData.farm.size}
-                onChangeText={(text: string) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    farm: { ...prev.farm, size: text },
-                  }))
-                }
-                keyboardType="numeric"
-                placeholder="Size"
-              />
-            </View>
-            <View style={styles.flex}>
-              <Picker
-                selectedValue={formData.farm.sizeUnit}
-                onValueChange={(value: any) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    farm: { ...prev.farm, sizeUnit: value },
-                  }))
-                }
-              >
-                <Picker.Item label="Hectares" value="hectares" />
-                <Picker.Item label="Acres" value="acres" />
-              </Picker>
-            </View>
-          </View>
+          <TextInput
+            label="Country"
+            value={formData.farm.country}
+            onChangeText={(text: string) =>
+              setFormData((prev) => ({
+                ...prev,
+                farm: { ...prev.farm, country: text },
+              }))
+            }
+            placeholder="Enter your country"
+            error={errors.farm?.country}
+          />
         </Card>
 
         <Card style={styles.section}>
           <ThemedText style={styles.sectionTitle}>
-            Device Configuration
+            System Configuration
           </ThemedText>
 
-          {/* Main Device */}
           <View style={styles.subsection}>
             <ThemedText style={styles.subsectionTitle}>
-              Main Controller (ESP8266)
+              Main Controller
             </ThemedText>
             <TextInput
-              label="Controller ID"
+              label="Controller ID (Auto-generated)"
               value={formData.mainDevice.id}
-              onChangeText={(text: string) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  mainDevice: { ...prev.mainDevice, id: text },
-                }))
-              }
-              placeholder="Enter the ESP8266 device ID"
+              editable={false}
+              style={styles.readOnlyInput}
             />
             <TextInput
               label="Controller Name"
@@ -229,55 +334,62 @@ const ProfileCompletion = () => {
                   mainDevice: { ...prev.mainDevice, name: text },
                 }))
               }
-              placeholder="Give your controller a name"
-            />
-            <TextInput
-              label="Installation Location"
-              value={formData.mainDevice.location}
-              onChangeText={(text: string) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  mainDevice: { ...prev.mainDevice, location: text },
-                }))
-              }
-              placeholder="Where is the controller installed?"
+              placeholder="Name your controller"
+              error={errors.mainDevice?.name}
             />
           </View>
 
-          {/* Sub-devices */}
           <View style={styles.subsection}>
             <ThemedText style={styles.subsectionTitle}>
               Connected Devices
             </ThemedText>
             {Object.entries(formData.subDevices).map(([key, device]) => (
               <View key={key} style={styles.deviceRow}>
-                <View style={styles.deviceInfo}>
-                  <ThemedText style={styles.deviceType}>
-                    {device.name}
-                  </ThemedText>
-                  <TextInput
-                    label="Device ID"
-                    value={device.id}
-                    onChangeText={(text: string) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        subDevices: {
-                          ...prev.subDevices,
-                          [key]: { ...device, id: text },
-                        },
-                      }))
-                    }
-                    placeholder={`Enter ${device.name} ID`}
-                  />
-                </View>
+                <ThemedText style={styles.deviceTitle}>
+                  {device.name}
+                </ThemedText>
+                <TextInput
+                  label="Device ID (Auto-generated)"
+                  value={device.id}
+                  editable={false}
+                  style={styles.readOnlyInput}
+                />
               </View>
             ))}
           </View>
         </Card>
 
+        <Card style={styles.section}>
+          <ThemedText style={styles.sectionTitle}>Alert Preferences</ThemedText>
+          <TextInput
+            label="Moisture Threshold (%)"
+            value={formData.alerts.moistureThreshold}
+            onChangeText={(text: string) =>
+              setFormData((prev) => ({
+                ...prev,
+                alerts: { ...prev.alerts, moistureThreshold: text },
+              }))
+            }
+            keyboardType="numeric"
+            placeholder="Enter moisture threshold"
+            error={errors.alerts?.moistureThreshold}
+          />
+          <TextInput
+            label="Emergency Contact"
+            value={formData.alerts.emergencyContact}
+            onChangeText={(text: string) =>
+              setFormData((prev) => ({
+                ...prev,
+                alerts: { ...prev.alerts, emergencyContact: text },
+              }))
+            }
+            placeholder="Emergency contact number"
+          />
+        </Card>
+
         <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
           <ThemedText style={styles.submitButtonText}>
-            Complete Profile
+            Complete Setup
           </ThemedText>
         </TouchableOpacity>
       </ScrollView>
@@ -314,12 +426,33 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 16,
   },
-  row: {
-    flexDirection: "row",
-    gap: 12,
+  subsection: {
+    marginTop: 16,
   },
-  flex: {
-    flex: 1,
+  subsectionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 12,
+  },
+  deviceRow: {
+    marginBottom: 16,
+  },
+  deviceTitle: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: 8,
+  },
+  readOnlyInput: {
+    backgroundColor: Colors.light.secondary,
+    opacity: 0.8,
+  },
+  pickerContainer: {
+    marginBottom: 16,
+    color: Colors.light.secondary,
+  },
+  label: {
+    fontSize: 16,
+    marginBottom: 8,
   },
   submitButton: {
     backgroundColor: Colors.light.primary,
@@ -332,25 +465,6 @@ const styles = StyleSheet.create({
     color: Colors.light.background,
     fontSize: 16,
     fontWeight: "bold",
-  },
-  subsection: {
-    marginTop: 16,
-  },
-  subsectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 12,
-  },
-  deviceRow: {
-    marginBottom: 16,
-  },
-  deviceInfo: {
-    flex: 1,
-  },
-  deviceType: {
-    fontSize: 14,
-    marginBottom: 4,
-    opacity: 0.8,
   },
 });
 

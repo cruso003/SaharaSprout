@@ -26,15 +26,14 @@ jobs:
       - name: Clean up EC2 directory before copying files
         run: |
           ssh -i key.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-            rm -rf ${{ secrets.EC2_APP_DIR }}/*
+            find ${{ secrets.EC2_APP_DIR }} -mindepth 1 ! -name 'service-file' -exec rm -rf {} +
           EOF
 
       - name: Sync backend files to EC2 using rsync
         run: |
           echo "node_modules/" > rsync-exclude.txt
           echo ".env" >> rsync-exclude.txt
-          echo "service-file/" >> rsync-exclude.txt
-          rsync -avz --delete --exclude-from=rsync-exclude.txt -e "ssh -i key.pem -o StrictHostKeyChecking=no" ./saharasprout-backend/ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.EC2_APP_DIR }}
+          rsync -avz --delete --filter "P service-file/" --exclude-from=rsync-exclude.txt -e "ssh -i key.pem -o StrictHostKeyChecking=no" ./saharasprout-backend/ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.EC2_APP_DIR }}
 
       - name: Debug EC2 files
         run: |
