@@ -20,6 +20,7 @@ const authRoutes = require('./routes/auth');
 const testRoute = require('./routes/test');
 const moistureRoute = require('./routes/moisture');
 const translateRoute = require('./routes/translation');
+const devicesRouter = require('./routes/devices');
 
 // Sample Route
 app.get('/', (req, res) => {
@@ -31,6 +32,7 @@ app.use('/auth', authRoutes);
 app.use('/api', testRoute);
 app.use('/api', moistureRoute);
 app.use('/api', translateRoute);
+app.use('/api/devices', devicesRouter);
 
 // Start Server
 app.listen(PORT, () => {

@@ -55,6 +55,7 @@ const ProfileCompletion = () => {
   const theme = Colors[colorScheme ?? "light"];
   const { user } = useUserStore();
   const [errors, setErrors] = useState<FormErrors>({});
+  const [loading, setLoading] = useState(false);
 
   const validateForm = () => {
     const newErrors: FormErrors = {};
@@ -178,7 +179,7 @@ const ProfileCompletion = () => {
       );
       return;
     }
-
+setLoading(true);
     try {
       const response = await auth.completeProfile(userId, formData)
       console.log(response.data);
@@ -198,6 +199,8 @@ const ProfileCompletion = () => {
         'Error',
         'An error occurred while saving your profile. Please check your connection and try again.'
       );
+    } finally {
+        setLoading(false);
     }
   };
 
@@ -381,9 +384,9 @@ const ProfileCompletion = () => {
           />
         </Card>
 
-        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={loading}>
           <ThemedText style={styles.submitButtonText}>
-            Complete Setup
+            {loading ? "Completing..." : "Complete Setup"}
           </ThemedText>
         </TouchableOpacity>
       </ScrollView>
