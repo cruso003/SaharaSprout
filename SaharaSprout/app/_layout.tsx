@@ -69,6 +69,19 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{headerShown: false}}/>
         <Stack.Screen name='notifications/index' options={{headerShown: false}}/>
+        <Stack.Screen name='complete-profile/index' options={{headerShown: false}}/>
+        <Stack.Screen name='soil-details/index' options={{headerShown: false}}/>
+        <Stack.Screen name='soil-history/index' options={{headerShown: false}}/>
+        <Stack.Screen name='recommendations/index' options={{headerShown: false}}/>
+        <Stack.Screen name='devices/add' options={{headerShown: false}}/>
+        <Stack.Screen name='devices/scan' options={{headerShown: false}}/>
+        <Stack.Screen name='devices/diagnostics' options={{headerShown: false}}/>
+        <Stack.Screen name='settings/language' options={{headerShown: false}}/>
+        <Stack.Screen name='settings/help' options={{headerShown: false}}/>
+        <Stack.Screen name='settings/farms' options={{headerShown: false}}/>
+        <Stack.Screen name='settings/crops' options={{headerShown: false}}/>
+        <Stack.Screen name='settings/backup' options={{headerShown: false}}/>
+        <Stack.Screen name='settings/advanced' options={{headerShown: false}}/>
       </Stack>
     </ThemeProvider>
   );

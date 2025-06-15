@@ -13,6 +13,19 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].primary,
         headerShown: false,
+        // Add shadow to tab bar for better visual prominence
+        tabBarStyle: {
+          elevation: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+        },
+        // Add tab label styles for better visibility
+        tabBarLabelStyle: {
+          fontWeight: '500',
+          fontSize: 12,
+        },
       }}>
       <Tabs.Screen
         name="dashboard/index"
@@ -24,11 +37,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="irrigation-control"
+        name="automation" // Changed from irrigation-control
         options={{
-          title: 'Irrigation',
+          title: 'Automation', // Changed from Irrigation
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'water' : 'water-outline'} color={color} />
+            <TabBarIcon 
+              // Changed icon to better represent automation
+              name={focused ? 'flash' : 'flash-outline'} 
+              color={color} 
+            />
           ),
         }}
       />

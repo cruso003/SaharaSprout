@@ -85,7 +85,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0
   },
   title: {
     fontSize: 24,
